@@ -1,5 +1,7 @@
 import requests, sys, json, time, hashlib, os
 
+requests.packages.urllib3.disable_warnings()
+
 s = requests.Session()
 
 note_username = os.environ.get('note_username')
@@ -16,7 +18,7 @@ def pusher(*args):
     SCTKEY = os.environ.get('SCTKEY') # http://sct.ftqq.com/
     Skey = os.environ.get('Skey') # https://cp.xuthus.cc/
     Smode = os.environ.get('Smode') # send, group, psend, pgroup, wx, tg, ww, ding(no send email)
-    pushplus_token = os.environ.get('pushplus_token') # http://pushplus.hxtrip.com/
+    pushplus_token = os.environ.get('pushplus_token') # http://www.pushplus.plus/
     pushplus_topic = os.environ.get('pushplus_topic') # pushplus一对多推送需要的"群组编码"，一对一推送不用管
     if SCKEY:
         sendurl = f"https://sc.ftqq.com/{SCKEY}.send"
@@ -33,7 +35,7 @@ def pusher(*args):
             }
         requests.post(sendurl, data=data)
     if pushplus_token:
-        sendurl = f"http://pushplus.hxtrip.com/send"
+        sendurl = "http://www.pushplus.plus/send"
         if not othermsg:
             othermsg = msg
         if pushplus_topic:
@@ -78,10 +80,9 @@ def checkin(YNOTE_SESS):
         t = time.strftime('%Y-%m-%d %H:%M:%S',
                           time.localtime(info['time'] / 1000))
         msg = ' 签到成功，本次获取 '+str(space) + ' M, 总共获取 '+str(total)+' M, 签到时间 '+str(t)
-        print(msg)
         return msg
     # cookie 登录失效或获取失败，改用用户名密码登录
-    else:
+    elif "AUTHENTICATION_FAILURE" in r.text:
         if note_username and note_password:
             YNOTE_SESS = login(note_username, note_password)
             if YNOTE_SESS:
@@ -89,6 +90,9 @@ def checkin(YNOTE_SESS):
         else:
             msg = "未设置账号密码并且cookie过期"
         return msg
+    else:
+        pusher("有道云笔记签到出现未知错误", r.text)
+        return r.text
 
 def login(username, password):
     t = str(round(time.time()*1000))
@@ -130,6 +134,7 @@ def main(*args):
     except:
         data = ""
         msg = check(data)
+    print(msg)
     return msg
 
 def check(data):

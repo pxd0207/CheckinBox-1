@@ -53,7 +53,7 @@ Github Actions添加在Setting→Secrets→New secrets，腾讯云函数SCF设�
 2. Key: SCTKEY --> Value: [Server酱·Turbo版的推送SCTKEY的值](http://sct.ftqq.com/)<br>
 3. Key: Skey --> Value: [酷推调用代码Skey](https://cp.xuthus.cc/)<br>
 4. Key: Smode --> Value: 酷推的推送渠道，不设置默认send.可选参数(send,group,psend,pgroup,wx,tg,ww,ding)<br>
-5. Key: pushplus_token --> Value: [pushplus推送token](http://pushplus.hxtrip.com/)<br>
+5. Key: pushplus_token --> Value: [pushplus推送token](http://www.pushplus.plus/)<br>
 6. Key: pushplus_topic --> Value: pushplus一对多推送需要的"群组编码"，一对一推送不用管填了报错
 #### 一切提醒都是报错提醒，没问题不提醒
 

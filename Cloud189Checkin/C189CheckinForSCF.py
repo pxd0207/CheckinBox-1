@@ -16,7 +16,7 @@ def pusher(*args):
     SCTKEY = os.environ.get('SCTKEY') # http://sct.ftqq.com/
     Skey = os.environ.get('Skey') # https://cp.xuthus.cc/
     Smode = os.environ.get('Smode') # send, group, psend, pgroup, wx, tg, ww, ding(no send email)
-    pushplus_token = os.environ.get('pushplus_token') # http://pushplus.hxtrip.com/
+    pushplus_token = os.environ.get('pushplus_token') # http://www.pushplus.plus/
     pushplus_topic = os.environ.get('pushplus_topic') # pushplus一对多推送需要的"群组编码"，一对一推送不用管
     if SCKEY:
         sendurl = f"https://sc.ftqq.com/{SCKEY}.send"
@@ -33,7 +33,7 @@ def pusher(*args):
             }
         requests.post(sendurl, data=data)
     if pushplus_token:
-        sendurl = f"http://pushplus.hxtrip.com/send"
+        sendurl = "http://www.pushplus.plus/send"
         if not othermsg:
             othermsg = msg
         if pushplus_topic:
