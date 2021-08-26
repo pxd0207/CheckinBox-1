@@ -1,65 +1,14 @@
-import requests, json, time, os
+import requests, json, time, os, sys
+sys.path.append('.')
+requests.packages.urllib3.disable_warnings()
+try:
+    from pusher import pusher
+except:
+    def pusher(*args):
+        pass
 from lxml import etree
 
 cookie = os.environ.get("cookie_enshan")
-
-def pusher(*args):
-    msg = args[0]
-    othermsg = ""
-    for i in range(1, len(args)):
-        othermsg += args[i]
-        othermsg += "\n"
-    SCKEY = os.environ.get('SCKEY') # http://sc.ftqq.com/
-    SCTKEY = os.environ.get('SCTKEY') # http://sct.ftqq.com/
-    Skey = os.environ.get('Skey') # https://cp.xuthus.cc/
-    Smode = os.environ.get('Smode') # send, group, psend, pgroup, wx, tg, ww, ding(no send email)
-    pushplus_token = os.environ.get('pushplus_token') # http://www.pushplus.plus/
-    pushplus_topic = os.environ.get('pushplus_topic') # pushplus一对多推送需要的"群组编码"，一对一推送不用管
-    if SCKEY:
-        sendurl = f"https://sc.ftqq.com/{SCKEY}.send"
-        data = {
-            "text" : msg,
-            "desp" : othermsg
-            }
-        requests.post(sendurl, data=data)
-    if SCTKEY:
-        sendurl = f"https://sctapi.ftqq.com/{SCTKEY}.send"
-        data = {
-            "title" : msg,
-            "desp" : othermsg
-            }
-        requests.post(sendurl, data=data)
-    if pushplus_token:
-        sendurl = "http://www.pushplus.plus/send"
-        if not othermsg:
-            othermsg = msg
-        if pushplus_topic:
-            params = {
-            "token" : pushplus_token,
-            "title" : msg,
-            "content" : othermsg,
-            "template" : "html",
-            "topic" : pushplus_topic
-            }
-        else:
-            params = {
-                "token" : pushplus_token,
-                "title" : msg,
-                "content" : othermsg,
-                "template" : "html"
-            }
-        r = requests.post(sendurl, params=params)
-        print(r.json())
-        if r.json()["code"] != 200:
-            print(f"pushplus推送失败！{r.json()['msg']}")
-    if Skey:
-        if not Smode:
-            Smode = 'send'
-        if othermsg:
-            msg = msg + "\n" + othermsg
-        sendurl = f"https://push.xuthus.cc/{Smode}/{Skey}"
-        params = {"c" : msg}
-        requests.post(sendurl, params=params)
 
 def run(*arg):
     msg = ""
@@ -86,17 +35,19 @@ def run(*arg):
             data = h.xpath('//tr/td[6]/text()')
             msg += f'签到成功或今日已签到，最后签到时间：{data[0]}'
         else:
-            msg += '签到失败，可能是cookie失效了！'
+            msg += '恩山论坛签到失败，可能是cookie失效了！'
             pusher(msg)
     except:
         msg = '无法正常连接到网站，请尝试改变网络环境，试下本地能不能跑脚本，或者换几个时间点执行脚本'
-        print(msg)
     return msg + '\n'
 
 def main(*arg):
     msg = ""
     global cookie
-    clist = cookie.split("\n")
+    if "\\n" in cookie:
+        clist = cookie.split("\\n")
+    else:
+        clist = cookie.split("\n")
     i = 0
     while i < len(clist):
         msg += f"第 {i+1} 个账号开始执行任务\n"

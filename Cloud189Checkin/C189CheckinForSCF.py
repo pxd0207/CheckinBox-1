@@ -1,68 +1,17 @@
 # -*- coding: utf8 -*-
 
-import requests, time, re, rsa, json, base64, os
+import requests, time, re, rsa, json, base64, os, sys
+sys.path.append('.')
+requests.packages.urllib3.disable_warnings()
+try:
+    from pusher import pusher
+except:
+    def pusher(*args):
+        pass
 from urllib import parse
 
 username = os.environ.get('username')
 password = os.environ.get('password')
-
-def pusher(*args):
-    msg = args[0]
-    othermsg = ""
-    for i in range(1, len(args)):
-        othermsg += args[i]
-        othermsg += "\n"
-    SCKEY = os.environ.get('SCKEY') # http://sc.ftqq.com/
-    SCTKEY = os.environ.get('SCTKEY') # http://sct.ftqq.com/
-    Skey = os.environ.get('Skey') # https://cp.xuthus.cc/
-    Smode = os.environ.get('Smode') # send, group, psend, pgroup, wx, tg, ww, ding(no send email)
-    pushplus_token = os.environ.get('pushplus_token') # http://www.pushplus.plus/
-    pushplus_topic = os.environ.get('pushplus_topic') # pushplus一对多推送需要的"群组编码"，一对一推送不用管
-    if SCKEY:
-        sendurl = f"https://sc.ftqq.com/{SCKEY}.send"
-        data = {
-            "text" : msg,
-            "desp" : othermsg
-            }
-        requests.post(sendurl, data=data)
-    if SCTKEY:
-        sendurl = f"https://sctapi.ftqq.com/{SCTKEY}.send"
-        data = {
-            "title" : msg,
-            "desp" : othermsg
-            }
-        requests.post(sendurl, data=data)
-    if pushplus_token:
-        sendurl = "http://www.pushplus.plus/send"
-        if not othermsg:
-            othermsg = msg
-        if pushplus_topic:
-            params = {
-            "token" : pushplus_token,
-            "title" : msg,
-            "content" : othermsg,
-            "template" : "html",
-            "topic" : pushplus_topic
-            }
-        else:
-            params = {
-                "token" : pushplus_token,
-                "title" : msg,
-                "content" : othermsg,
-                "template" : "html"
-            }
-        r = requests.post(sendurl, params=params)
-        print(r.json())
-        if r.json()["code"] != 200:
-            print(f"pushplus推送失败！{r.json()['msg']}")
-    if Skey:
-        if not Smode:
-            Smode = 'send'
-        if othermsg:
-            msg = msg + "\n" + othermsg
-        sendurl = f"https://push.xuthus.cc/{Smode}/{Skey}"
-        params = {"c" : msg}
-        requests.post(sendurl, params=params)
 
 def main(username:str, password:str):
     try:
@@ -71,7 +20,7 @@ def main(username:str, password:str):
         if(s == "error"):
             return "天翼云盘登录出错"
         else:
-            pass
+            msg += "登录成功\n"
         rand = str(round(time.time()*1000))
         surl = f'https://api.cloud.189.cn/mkt/userSign.action?rand={rand}&clientType=TELEANDROID&version=8.6.3&model=SM-G930K'
         url = f'https://m.cloud.189.cn/v2/drawPrizeMarketDetails.action?taskId=TASK_SIGNIN&activityId=ACT_SIGNIN'
@@ -86,55 +35,44 @@ def main(username:str, password:str):
         response = s.get(surl,headers=headers,timeout=20)
         netdiskBonus = response.json()['netdiskBonus']
         if(response.json()['isSign'] == "false"):
-            print(f"未签到，签到获得  {netdiskBonus}  M空间")
             msg += f"未签到，签到获得  {netdiskBonus}  M空间\n"
         else:
-            print(f"已经签到过了，签到获得  {netdiskBonus}  M空间")
             msg += f"已经签到过了，签到获得  {netdiskBonus}  M空间,"
 
         #第一次抽奖
         response = s.get(url,headers=headers,timeout=20)
         if ("errorCode" in response.text):
             if("User_Not_Chance" in response.text):
-                print("抽奖次数不足")
                 msg += "抽奖次数不足,"
             elif("InternalError" in response.text):
-                print("内部错误，可能是活动下线")
                 msg += "内部错误，可能是活动下线,"
             else:
-                print(response.text)
-                msg += "第一次抽奖出错,"
-                pusher("第一次抽奖出错", response.text)
+                msg += "第一次抽奖出错\n" + response.text
+                pusher("第一次抽奖出错", response.text[:200])
         else:
             try:
                 description = response.json()['description']
             except:
                 description = "未知"
-            print(f"抽奖获得  {description}  ")
             msg += f"抽奖获得  {description}  ,"
 
         #第二次抽奖
         response = s.get(url2,headers=headers,timeout=20)
         if ("errorCode" in response.text):
             if("User_Not_Chance" in response.text):
-                print("抽奖次数不足")
                 msg += "抽奖次数不足,"
             elif("InternalError" in response.text):
-                print("内部错误，可能是活动下线")
                 msg += "内部错误，可能是活动下线,"
             else:
-                print(response.text)
-                msg += "第二次抽奖出错,"
-                pusher("第二次抽奖出错", response.text)
+                msg += "第二次抽奖出错\n" + response.text
+                pusher("第二次抽奖出错", response.text[:200])
         else:
             try:
                 description = response.json()['description']
             except:
                 description = "未知"
-            print(f"抽奖获得  {description}  ")
             msg += f"抽奖获得  {description}  ,"
     except Exception as e:
-        print("天翼云签到出错：", repr(e))
         pusher("天翼云签到出错", repr(e))
         msg += "天翼云签到出错："+repr(e)
     return msg + "\n"
@@ -181,7 +119,7 @@ def rsa_encode(j_rsakey, string):
 
 def login(username, password):
     s = requests.Session()
-    url = "https://cloud.189.cn/udb/udb_login.jsp?pageId=1&redirectURL=/main.action"
+    url = "https://cloud.189.cn/api/portal/loginUrl.action?redirectURL=https://cloud.189.cn/web/redirect.html"
     r = s.get(url)
     captchaToken = re.findall(r"captchaToken' value='(.+?)'", r.text)[0]
     lt = re.findall(r'lt = "(.+?)"', r.text)[0]
@@ -210,11 +148,12 @@ def login(username, password):
         }
     r = s.post(url, data=data, headers=headers, timeout=5)
     if(r.json()['result'] == 0):
-        print(r.json()['msg'])
+        # print(r.json()['msg'])
+        pass
     else:
         msg = r.json()['msg']
         print(msg)
-        pusher("登录出错", f"错误提示：{msg}")
+        pusher("天翼云盘登录出错", f"错误提示：{msg[:200]}")
         return "error"
     redirect_url = r.json()['toUrl']
     r = s.get(redirect_url)
@@ -223,8 +162,12 @@ def login(username, password):
 def C189Checkin(*args):
     msg = ""
     global username, password
-    ulist = username.split("\n")
-    plist = password.split("\n")
+    if "\\n" in username:
+        ulist = username.split("\\n")
+        plist = password.split("\\n")
+    else:
+        ulist = username.split("\n")
+        plist = password.split("\n")
     if len(ulist) == len(plist):
         i = 0
         while i < len(ulist):
@@ -234,8 +177,8 @@ def C189Checkin(*args):
             msg += main(username, password)
             i += 1
     else:
-        msg = "账号密码个数不相符"
-        print(msg)
+        msg = "账号密码个数不相符\n"
+    print(msg[:-1])
     return msg
 
 if __name__ == "__main__":

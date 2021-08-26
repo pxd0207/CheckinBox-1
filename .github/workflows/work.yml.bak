@@ -1,0 +1,58 @@
+name: 'run'
+
+on:
+  schedule:
+    - cron: '30 */8 * * *'
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: 'setup python'
+        uses: actions/setup-python@master
+        with: 
+          python-version: 3.7
+
+      - name: requirements
+        run : pip3 install -r requirements.txt
+
+      - name: main
+        env:
+          SCKEY: ${{ secrets.SCKEY }}
+          SCTKEY: ${{ secrets.SCTKEY }}
+          Skey: ${{ secrets.Skey }}
+          Smode: ${{ secrets.Smode }}
+          pushplus_token: ${{ secrets.pushplus_token }}
+          pushplus_topic: ${{ secrets.pushplus_topic }}
+          tg_token: ${{ secrets.tg_token }}
+          tg_chatid: ${{ secrets.tg_chatid }}
+          tg_api_host: ${{ secrets.tg_api_host }}
+          username: ${{ secrets.username }}
+          password: ${{ secrets.password }}
+          fflogin_name: ${{ secrets.fflogin_name }}
+          fflogin_password: ${{ secrets.fflogin_password }}
+          area_name: ${{ secrets.area_name }}
+          server_name: ${{ secrets.server_name }}
+          role_name: ${{ secrets.role_name }}
+          cookie_smzdm: ${{ secrets.cookie_smzdm }}
+          netease_username: ${{ secrets.netease_username }}
+          netease_password: ${{ secrets.netease_password }}
+          note_username: ${{ secrets.note_username }}
+          note_password: ${{ secrets.note_password }}
+          cookie_v2ex: ${{ secrets.cookie_v2ex }}
+          cookie_enshan: ${{ secrets.cookie_enshan }}
+          cookie_zhiyou: ${{ secrets.cookie_zhiyou }}
+          cookie_pt: ${{ secrets.cookie_pt }}
+          pt_website: ${{ secrets.pt_website }}
+        run: |
+          python3 ./Cloud189Checkin/C189CheckinForSCF.py
+          python3 ./FF14Checkin/FF14CheckinForSCF.py
+          python3 ./smzdmCheckin/smzdmCheckinForSCF.py
+          python3 ./NetEase_Music_daily/NetEase_Music_dailyForSCF.py
+          python3 ./NoteyoudaoCheckin/NoteYoudaoForSCF.py
+          python3 ./V2EX/v2ex.py
+          python3 ./Enshan/Enshan.py
+          python3 ./Zhiyou/zhiyou.py
+          python3 ./ptWebsite/ptCheckin.py

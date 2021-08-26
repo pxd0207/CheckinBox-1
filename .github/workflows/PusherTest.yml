@@ -1,0 +1,31 @@
+name: 'PusherTest'
+
+on:
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: 'setup python'
+        uses: actions/setup-python@master
+        with: 
+          python-version: 3.7
+
+      - name: requirements
+        run : pip3 install requests
+
+      - name: main
+        env:
+          SCKEY: ${{ secrets.SCKEY }}
+          SCTKEY: ${{ secrets.SCTKEY }}
+          Skey: ${{ secrets.Skey }}
+          Smode: ${{ secrets.Smode }}
+          pushplus_token: ${{ secrets.pushplus_token }}
+          pushplus_topic: ${{ secrets.pushplus_topic }}
+          tg_token: ${{ secrets.tg_token }}
+          tg_chatid: ${{ secrets.tg_chatid }}
+          tg_api_host: ${{ secrets.tg_api_host }}
+        run: |
+          python3 ./PusherTest/PusherTest.py

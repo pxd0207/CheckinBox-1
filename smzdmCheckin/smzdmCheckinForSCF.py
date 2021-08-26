@@ -1,66 +1,15 @@
 # -*- coding: utf8 -*-
 
-import requests, json, time, os
+import requests, json, time, os, sys
+sys.path.append('.')
+requests.packages.urllib3.disable_warnings()
+try:
+    from pusher import pusher
+except:
+    def pusher(*args):
+        pass
 
 cookie = os.environ.get("cookie_smzdm")
-
-def pusher(*args):
-    msg = args[0]
-    othermsg = ""
-    for i in range(1, len(args)):
-        othermsg += args[i]
-        othermsg += "\n"
-    SCKEY = os.environ.get('SCKEY') # http://sc.ftqq.com/
-    SCTKEY = os.environ.get('SCTKEY') # http://sct.ftqq.com/
-    Skey = os.environ.get('Skey') # https://cp.xuthus.cc/
-    Smode = os.environ.get('Smode') # send, group, psend, pgroup, wx, tg, ww, ding(no send email)
-    pushplus_token = os.environ.get('pushplus_token') # http://www.pushplus.plus/
-    pushplus_topic = os.environ.get('pushplus_topic') # pushplus一对多推送需要的"群组编码"，一对一推送不用管
-    if SCKEY:
-        sendurl = f"https://sc.ftqq.com/{SCKEY}.send"
-        data = {
-            "text" : msg,
-            "desp" : othermsg
-            }
-        requests.post(sendurl, data=data)
-    if SCTKEY:
-        sendurl = f"https://sctapi.ftqq.com/{SCTKEY}.send"
-        data = {
-            "title" : msg,
-            "desp" : othermsg
-            }
-        requests.post(sendurl, data=data)
-    if pushplus_token:
-        sendurl = "http://www.pushplus.plus/send"
-        if not othermsg:
-            othermsg = msg
-        if pushplus_topic:
-            params = {
-            "token" : pushplus_token,
-            "title" : msg,
-            "content" : othermsg,
-            "template" : "html",
-            "topic" : pushplus_topic
-            }
-        else:
-            params = {
-                "token" : pushplus_token,
-                "title" : msg,
-                "content" : othermsg,
-                "template" : "html"
-            }
-        r = requests.post(sendurl, params=params)
-        print(r.json())
-        if r.json()["code"] != 200:
-            print(f"pushplus推送失败！{r.json()['msg']}")
-    if Skey:
-        if not Smode:
-            Smode = 'send'
-        if othermsg:
-            msg = msg + "\n" + othermsg
-        sendurl = f"https://push.xuthus.cc/{Smode}/{Skey}"
-        params = {"c" : msg}
-        requests.post(sendurl, params=params)
 
 def main(*arg):
     try:
@@ -78,7 +27,7 @@ def main(*arg):
         r = s.get(url, headers=headers, verify=False)
         print(r.text.encode('latin-1').decode('unicode_escape'))
         if r.json()["error_code"] != 0:
-            pusher("smzdm  Cookie过期", r.text)
+            pusher("smzdm  Cookie过期", r.text[:200])
             msg += "smzdm cookie失效"
         else:
             msg += "smzdm签到成功"
@@ -90,7 +39,10 @@ def main(*arg):
 def smzdm_pc(*arg):
     msg = ""
     global cookie
-    clist = cookie.split("\n")
+    if "\\n" in cookie:
+        clist = cookie.split("\\n")
+    else:
+        clist = cookie.split("\n")
     i = 0
     while i < len(clist):
         msg += f"第 {i+1} 个账号开始执行任务\n"
